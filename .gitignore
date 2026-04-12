@@ -1,5 +1,3 @@
-solved
-
 # Build artifacts (user-space)
 boilerplate/engine
 boilerplate/memory_hog
@@ -14,6 +12,7 @@ boilerplate/io_pulse
 Module.symvers
 modules.order
 *.cmd
+boilerplate/.*.cmd
 .tmp_versions/
 
 # Root filesystems
