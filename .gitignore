@@ -3,31 +3,50 @@ boilerplate/engine
 boilerplate/memory_hog
 boilerplate/cpu_hog
 boilerplate/io_pulse
+engine
+memory_hog
+cpu_hog
+io_pulse
 
 # Kernel module build artifacts
 *.ko
 *.o
 *.mod
 *.mod.c
+*.ko.cmd
+*.mod.cmd
+*.o.cmd
 Module.symvers
 modules.order
 *.cmd
-boilerplate/.*.cmd
 .tmp_versions/
+**/.tmp_versions/
 
 # Root filesystems
 rootfs-base/
 rootfs-*/
+**/rootfs-base/
+**/rootfs-*/
 *.tar.gz
+*.tar.xz
+*.tar
 
 # Logs
 *.log
 logs/
+**/logs/
 
-# Runtime socket
+# Runtime files
 /tmp/mini_runtime.sock
+*.sock
+*.pid
+boilerplate/tmp/
+**/tmp/*.out
 
 # Editor / OS junk
 *.swp
+*.swo
 *~
 .vscode/
+.idea/
+.DS_Store
