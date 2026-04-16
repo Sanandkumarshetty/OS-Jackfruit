@@ -1,44 +1,61 @@
-Multi-Container Runtime with Kernel Memory Monitor
-Team Information
-Name: Sanand Kumar Shetty
-SRN: PES2UG24CS438
-Name: Shiva Sandesh
-SRN: PES2UG24CS469
-Project Overview
+# Multi-Container Runtime with Kernel Memory Monitor
 
+## Team Information
+- **Name:** Sanand Kumar Shetty  
+  **SRN:** PES2UG24CS438  
+
+- **Name:** Shiva Sandesh  
+  **SRN:** PES2UG24CS469  
+
+---
+
+## Project Overview
 This project implements a lightweight Linux container runtime in C with support for managing multiple containers through a centralized supervisor process. It also includes a kernel-space memory monitor that enforces soft and hard memory limits on container processes.
 
 The system enables container lifecycle management, logging, inter-process communication, and scheduling experimentation within an isolated environment.
 
-System Architecture
-User-Space Runtime (engine.c)
-Implements a long-running supervisor process
-Manages multiple containers concurrently
-Handles container lifecycle (start, run, stop)
-Maintains metadata for each container
-Captures container output using a bounded-buffer logging system
-Provides a CLI interface for interaction
-Kernel-Space Monitor (monitor.c)
-Implemented as a Linux Kernel Module
-Tracks container processes using their PIDs
-Enforces memory usage policies
-Differentiates between soft and hard memory limits
-Communicates with user-space via ioctl
-Features
-Multi-container management with a single supervisor
-Process isolation using namespaces (PID, UTS, mount)
-Filesystem isolation using separate root filesystems
-CLI-based container control
-Bounded-buffer logging with producer-consumer design
-Two IPC mechanisms:
-Pipes for logging
-Socket/FIFO/shared memory for CLI communication
-Kernel-level memory monitoring
-Scheduling experiments using container workloads
-Clean resource management and teardown
-Build and Execution
-Build Project
-make
+---
+
+## System Architecture
+
+### User-Space Runtime (engine.c)
+- Implements a long-running supervisor process  
+- Manages multiple containers concurrently  
+- Handles container lifecycle (start, run, stop)  
+- Maintains metadata for each container  
+- Captures container output using a bounded-buffer logging system  
+- Provides a CLI interface for interaction  
+
+### Kernel-Space Monitor (monitor.c)
+- Implemented as a Linux Kernel Module  
+- Tracks container processes using their PIDs  
+- Enforces memory usage policies  
+- Differentiates between soft and hard memory limits  
+- Communicates with user-space via `ioctl`  
+
+---
+
+## Features
+- Multi-container management with a single supervisor  
+- Process isolation using namespaces (PID, UTS, mount)  
+- Filesystem isolation using separate root filesystems  
+- CLI-based container control  
+- Bounded-buffer logging with producer-consumer design  
+
+### IPC Mechanisms
+- Pipes for logging  
+- Socket/FIFO/shared memory for CLI communication  
+
+- Kernel-level memory monitoring  
+- Scheduling experiments using container workloads  
+- Clean resource management and teardown  
+
+---
+
+## Build and Execution
+
+### Build Project
+```bash
 Load Kernel Module
 sudo insmod monitor.ko
 Verify Device
@@ -71,8 +88,8 @@ engine logs <id>
 engine stop <id>
 Logging System
 Uses pipes to capture stdout and stderr from containers
-Implements bounded buffer with producer-consumer threads
-Ensures:
+Implements a bounded buffer with producer-consumer threads
+Guarantees
 No data loss
 No deadlocks
 Safe concurrent access
@@ -83,9 +100,9 @@ Soft Limit: Logs warning when exceeded
 Hard Limit: Terminates process when exceeded
 Uses kernel-space enforcement for reliability
 Scheduling Experiments
-Supports execution of CPU-bound and I/O-bound workloads
+Supports CPU-bound and I/O-bound workloads
 Allows configuration using nice values
-Enables observation of:
+Observations
 CPU sharing
 Execution time differences
 Scheduler fairness and responsiveness
@@ -119,7 +136,7 @@ Design Decisions and Tradeoffs
 Component	Decision	Tradeoff
 Isolation	chroot + namespaces	Simpler but less secure than pivot_root
 Supervisor	Centralized daemon	Single point of control
-Logging	Bounded buffer	Added complexity for synchronization
+Logging	Bounded buffer	Added synchronization complexity
 IPC	Separate channels	Increased design complexity
 Kernel Monitor	Kernel enforcement	Requires module handling
 Scheduler Experiment Results
@@ -129,3 +146,20 @@ Linux scheduler balances fairness and throughput effectively
 Conclusion
 
 This project demonstrates practical implementation of containerization concepts, kernel interaction, and operating system fundamentals including process management, memory control, synchronization, and scheduling.
+
+
+---
+
+### 🔧 Why your previous version broke
+Your commit ignored indentation because:
+- No `#` headings → everything looked like plain text  
+- No `-` for lists → lines merged  
+- No triple backticks → commands not formatted  
+- Table not in Markdown format  
+
+---
+
+If you want, I can also:
+- Add **badges (build, language, etc.)**
+- Make it **more professional (top-tier GitHub style)**
+- Or include **screenshots section formatting** (very important for marks)
