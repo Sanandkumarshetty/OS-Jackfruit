@@ -56,97 +56,183 @@ The system enables container lifecycle management, logging, inter-process commun
 
 ### Build Project
 ```bash
-Load Kernel Module
+make
+````
+
+### Load Kernel Module
+
+```bash
 sudo insmod monitor.ko
-Verify Device
+```
+
+### Verify Device
+
+```bash
 ls -l /dev/container_monitor
-Start Supervisor
+```
+
+### Start Supervisor
+
+```bash
 sudo ./engine supervisor ./rootfs-base
-Create Container Filesystems
+```
+
+### Create Container Filesystems
+
+```bash
 cp -a ./rootfs-base ./rootfs-alpha
 cp -a ./rootfs-base ./rootfs-beta
-Start Containers
+```
+
+### Start Containers
+
+```bash
 sudo ./engine start alpha ./rootfs-alpha /bin/sh --soft-mib 48 --hard-mib 80
 sudo ./engine start beta ./rootfs-beta /bin/sh --soft-mib 64 --hard-mib 96
-List Containers
+```
+
+### List Containers
+
+```bash
 sudo ./engine ps
-View Logs
+```
+
+### View Logs
+
+```bash
 sudo ./engine logs alpha
-Stop Containers
+```
+
+### Stop Containers
+
+```bash
 sudo ./engine stop alpha
 sudo ./engine stop beta
-Kernel Logs
+```
+
+### Kernel Logs
+
+```bash
 dmesg | tail
-Unload Module
+```
+
+### Unload Module
+
+```bash
 sudo rmmod monitor
-CLI Commands
+```
+
+---
+
+## CLI Commands
+
+```bash
 engine supervisor <base-rootfs>
 engine start <id> <container-rootfs> <command> [options]
 engine run   <id> <container-rootfs> <command> [options]
 engine ps
 engine logs <id>
 engine stop <id>
-Logging System
-Uses pipes to capture stdout and stderr from containers
-Implements a bounded buffer with producer-consumer threads
-Guarantees
-No data loss
-No deadlocks
-Safe concurrent access
-Logs are stored per container
-Memory Monitoring
-Tracks Resident Set Size (RSS) of container processes
-Soft Limit: Logs warning when exceeded
-Hard Limit: Terminates process when exceeded
-Uses kernel-space enforcement for reliability
-Scheduling Experiments
-Supports CPU-bound and I/O-bound workloads
-Allows configuration using nice values
-Observations
-CPU sharing
-Execution time differences
-Scheduler fairness and responsiveness
-Engineering Analysis
-Isolation Mechanisms
+```
+
+---
+
+## Logging System
+
+* Uses pipes to capture stdout and stderr from containers
+* Implements a bounded buffer with producer-consumer threads
+
+### Guarantees
+
+* No data loss
+
+* No deadlocks
+
+* Safe concurrent access
+
+* Logs are stored per container
+
+---
+
+## Memory Monitoring
+
+* Tracks Resident Set Size (RSS) of container processes
+
+* **Soft Limit:** Logs warning when exceeded
+
+* **Hard Limit:** Terminates process when exceeded
+
+* Uses kernel-space enforcement for reliability
+
+---
+
+## Scheduling Experiments
+
+* Supports CPU-bound and I/O-bound workloads
+* Allows configuration using `nice` values
+
+### Observations
+
+* CPU sharing
+* Execution time differences
+* Scheduler fairness and responsiveness
+
+---
+
+## Engineering Analysis
+
+### Isolation Mechanisms
 
 Containers are isolated using Linux namespaces (PID, UTS, mount) and separate root filesystems. Each container operates independently while sharing the host kernel.
 
-Supervisor and Lifecycle Management
+### Supervisor and Lifecycle Management
 
 A persistent supervisor process manages all containers, ensuring proper process tracking, signal handling, and cleanup of child processes.
 
-IPC and Synchronization
+### IPC and Synchronization
 
 Two IPC mechanisms are used:
 
-Pipes for logging
-Socket/FIFO/shared memory for control
+* Pipes for logging
+* Socket/FIFO/shared memory for control
 
 Synchronization is handled using mutexes and condition variables to avoid race conditions and ensure safe concurrent access.
 
-Memory Management
+### Memory Management
 
 RSS is monitored to track actual memory usage. Soft and hard limits allow flexible control, with enforcement implemented in kernel space for accuracy and reliability.
 
-Scheduling Behavior
+### Scheduling Behavior
 
 Experiments demonstrate how Linux scheduling policies affect process execution, highlighting trade-offs between fairness and performance.
 
-Design Decisions and Tradeoffs
-Component	Decision	Tradeoff
-Isolation	chroot + namespaces	Simpler but less secure than pivot_root
-Supervisor	Centralized daemon	Single point of control
-Logging	Bounded buffer	Added synchronization complexity
-IPC	Separate channels	Increased design complexity
-Kernel Monitor	Kernel enforcement	Requires module handling
-Scheduler Experiment Results
-CPU-bound processes with higher priority complete faster
-I/O-bound processes remain responsive under load
-Linux scheduler balances fairness and throughput effectively
-Conclusion
+---
+
+## Design Decisions and Tradeoffs
+
+| Component      | Decision            | Tradeoff                                |
+| -------------- | ------------------- | --------------------------------------- |
+| Isolation      | chroot + namespaces | Simpler but less secure than pivot_root |
+| Supervisor     | Centralized daemon  | Single point of control                 |
+| Logging        | Bounded buffer      | Added synchronization complexity        |
+| IPC            | Separate channels   | Increased design complexity             |
+| Kernel Monitor | Kernel enforcement  | Requires module handling                |
+
+---
+
+## Scheduler Experiment Results
+
+* CPU-bound processes with higher priority complete faster
+* I/O-bound processes remain responsive under load
+* Linux scheduler balances fairness and throughput effectively
+
+---
+
+## Conclusion
 
 This project demonstrates practical implementation of containerization concepts, kernel interaction, and operating system fundamentals including process management, memory control, synchronization, and scheduling.
 
+```
 
 ---
 
@@ -163,3 +249,4 @@ If you want, I can also:
 - Add **badges (build, language, etc.)**
 - Make it **more professional (top-tier GitHub style)**
 - Or include **screenshots section formatting** (very important for marks)
+```
