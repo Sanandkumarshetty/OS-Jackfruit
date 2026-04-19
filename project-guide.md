@@ -399,6 +399,7 @@ You must provide annotated screenshots that demonstrate each of the following. E
 | #   | What to Demonstrate         | What the Screenshot Must Show                                                                                                             |
 | --- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | Multi-container supervision | Two or more containers running under one supervisor process                                                                               |
+| 1   | Multi-container supervision | Two or more containers running under one supervisor process                                                                               |
 | 2   | Metadata tracking           | Output of the `ps` command showing tracked container metadata                                                                             |
 | 3   | Bounded-buffer logging      | Log file contents captured through the logging pipeline, and evidence of the pipeline operating (e.g., producer/consumer activity)        |
 | 4   | CLI and IPC                 | A CLI command being issued and the supervisor responding, demonstrating the second IPC mechanism                                          |
