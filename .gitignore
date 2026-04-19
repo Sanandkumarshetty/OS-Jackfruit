@@ -7,6 +7,8 @@ engine
 memory_hog
 cpu_hog
 io_pulse
+a.out
+*.out
 
 # Kernel module build artifacts
 *.ko
@@ -16,17 +18,23 @@ io_pulse
 *.ko.cmd
 *.mod.cmd
 *.o.cmd
+*.mod.o
+*.mod.o.cmd
 Module.symvers
 modules.order
 *.cmd
+.cache.mk
 .tmp_versions/
 **/.tmp_versions/
+boilerplate/Module.symvers
+boilerplate/modules.order
 
 # Root filesystems
 rootfs-base/
 rootfs-*/
 **/rootfs-base/
 **/rootfs-*/
+boilerplate/alpine-minirootfs-*/
 *.tar.gz
 *.tar.xz
 *.tar
@@ -42,6 +50,8 @@ logs/
 *.pid
 boilerplate/tmp/
 **/tmp/*.out
+boilerplate/core
+core
 
 # Editor / OS junk
 *.swp
@@ -50,3 +60,7 @@ boilerplate/tmp/
 .vscode/
 .idea/
 .DS_Store
+
+# Accidental nested repositories from local experiments
+boilerplate/.git/
+*.codex
