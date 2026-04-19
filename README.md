@@ -233,20 +233,3 @@ Experiments demonstrate how Linux scheduling policies affect process execution, 
 This project demonstrates practical implementation of containerization concepts, kernel interaction, and operating system fundamentals including process management, memory control, synchronization, and scheduling.
 
 ```
-
----
-
-### 🔧 Why your previous version broke
-Your commit ignored indentation because:
-- No `#` headings → everything looked like plain text  
-- No `-` for lists → lines merged  
-- No triple backticks → commands not formatted  
-- Table not in Markdown format  
-
----
-
-If you want, I can also:
-- Add **badges (build, language, etc.)**
-- Make it **more professional (top-tier GitHub style)**
-- Or include **screenshots section formatting** (very important for marks)
-```
