@@ -10,121 +10,72 @@
 ---
 
 ## Project Overview
-This project implements a lightweight Linux container runtime in C with support for managing multiple containers through a centralized supervisor process. It also includes a kernel-space memory monitor that enforces soft and hard memory limits on container processes.
 
-The system enables container lifecycle management, logging, inter-process communication, and scheduling experimentation within an isolated environment.
+This project implements a lightweight Linux container runtime in C, combined with a kernel-space memory monitor. The system supports running multiple containers simultaneously under a centralized supervisor while enforcing memory constraints at the kernel level.
+
+The design demonstrates key operating system concepts including process isolation, inter-process communication (IPC), synchronization, scheduling behavior, and kernel-user space interaction.
 
 ---
 
 ## System Architecture
 
-### User-Space Runtime (engine.c)
-- Implements a long-running supervisor process  
-- Manages multiple containers concurrently  
-- Handles container lifecycle (start, run, stop)  
-- Maintains metadata for each container  
-- Captures container output using a bounded-buffer logging system  
-- Provides a CLI interface for interaction  
+The project consists of two major components:
 
-### Kernel-Space Monitor (monitor.c)
-- Implemented as a Linux Kernel Module  
-- Tracks container processes using their PIDs  
-- Enforces memory usage policies  
-- Differentiates between soft and hard memory limits  
-- Communicates with user-space via `ioctl`  
+### 1. User-Space Runtime and Supervisor (`engine.c`)
+
+* Acts as a long-running parent process
+* Manages lifecycle of multiple containers
+* Provides a CLI interface for interaction
+* Maintains metadata for all containers
+* Handles logging through a bounded-buffer mechanism
+* Communicates with the kernel module using `ioctl`
+
+### 2. Kernel-Space Memory Monitor (`monitor.c`)
+
+* Implemented as a Linux Kernel Module (LKM)
+* Tracks container processes using their host PIDs
+* Enforces:
+
+  * **Soft memory limits** (warning)
+  * **Hard memory limits** (process termination)
+* Maintains process tracking using a kernel linked list
+* Ensures thread-safe access using kernel synchronization primitives
 
 ---
 
 ## Features
-- Multi-container management with a single supervisor  
-- Process isolation using namespaces (PID, UTS, mount)  
-- Filesystem isolation using separate root filesystems  
-- CLI-based container control  
-- Bounded-buffer logging with producer-consumer design  
 
-### IPC Mechanisms
-- Pipes for logging  
-- Socket/FIFO/shared memory for CLI communication  
+* Multi-container execution with isolation
+* Namespace-based process and filesystem separation
+* Supervisor-based container lifecycle management
+* CLI-driven interaction model
+* Dual IPC design:
 
-- Kernel-level memory monitoring  
-- Scheduling experiments using container workloads  
-- Clean resource management and teardown  
-
----
-
-## Build and Execution
-
-### Build Project
-```bash
-make
-````
-
-### Load Kernel Module
-
-```bash
-sudo insmod monitor.ko
-```
-
-### Verify Device
-
-```bash
-ls -l /dev/container_monitor
-```
-
-### Start Supervisor
-
-```bash
-sudo ./engine supervisor ./rootfs-base
-```
-
-### Create Container Filesystems
-
-```bash
-cp -a ./rootfs-base ./rootfs-alpha
-cp -a ./rootfs-base ./rootfs-beta
-```
-
-### Start Containers
-
-```bash
-sudo ./engine start alpha ./rootfs-alpha /bin/sh --soft-mib 48 --hard-mib 80
-sudo ./engine start beta ./rootfs-beta /bin/sh --soft-mib 64 --hard-mib 96
-```
-
-### List Containers
-
-```bash
-sudo ./engine ps
-```
-
-### View Logs
-
-```bash
-sudo ./engine logs alpha
-```
-
-### Stop Containers
-
-```bash
-sudo ./engine stop alpha
-sudo ./engine stop beta
-```
-
-### Kernel Logs
-
-```bash
-dmesg | tail
-```
-
-### Unload Module
-
-```bash
-sudo rmmod monitor
-```
+  * Control channel (CLI ↔ Supervisor)
+  * Logging channel (Container → Supervisor)
+* Concurrent logging using producer-consumer model
+* Kernel-enforced memory limits (soft & hard)
+* Scheduling experiments for performance analysis
+* Proper resource cleanup (no zombies, no leaks)
 
 ---
 
-## CLI Commands
+## Container Isolation
+
+Each container runs with:
+
+* **PID namespace** – isolated process IDs
+* **UTS namespace** – isolated hostname
+* **Mount namespace** – isolated filesystem
+* **Separate root filesystem** using `chroot`
+
+Each container operates independently with its own writable root filesystem derived from a base image.
+
+---
+
+## CLI Interface
+
+The runtime provides the following commands:
 
 ```bash
 engine supervisor <base-rootfs>
@@ -135,101 +86,226 @@ engine logs <id>
 engine stop <id>
 ```
 
+### Command Behavior
+
+* `supervisor` → Starts the container manager daemon
+* `start` → Launches a container in background
+* `run` → Launches container and waits for completion
+* `ps` → Displays container metadata
+* `logs` → Shows container output logs
+* `stop` → Gracefully stops a running container
+
+### Optional Flags
+
+* `--soft-mib N` → Soft memory limit (default: 40 MiB)
+* `--hard-mib N` → Hard memory limit (default: 64 MiB)
+* `--nice N` → Adjust scheduling priority
+
 ---
 
 ## Logging System
 
-* Uses pipes to capture stdout and stderr from containers
-* Implements a bounded buffer with producer-consumer threads
+The project uses a **bounded-buffer logging design**:
+
+* Containers write output to pipes
+* Supervisor reads via producer threads
+* Data is stored in a shared buffer
+* Consumer threads write logs to files
 
 ### Guarantees
 
-* No data loss
-
-* No deadlocks
-
-* Safe concurrent access
-
-* Logs are stored per container
+* No log loss during abrupt termination
+* No deadlocks under high load
+* Proper synchronization between threads
+* Clean shutdown with buffer flush
 
 ---
 
 ## Memory Monitoring
 
-* Tracks Resident Set Size (RSS) of container processes
+The kernel module enforces memory policies:
 
-* **Soft Limit:** Logs warning when exceeded
+* **Soft Limit**
 
-* **Hard Limit:** Terminates process when exceeded
+  * Logs warning when exceeded
+* **Hard Limit**
 
-* Uses kernel-space enforcement for reliability
+  * Terminates process (SIGKILL)
+
+### Tracking
+
+* Processes registered via `ioctl`
+* Stored in kernel linked list
+* Periodically monitored using RSS values
+
+### Termination Classification
+
+* Normal exit
+* Manually stopped
+* Killed due to hard limit
 
 ---
 
 ## Scheduling Experiments
 
-* Supports CPU-bound and I/O-bound workloads
-* Allows configuration using `nice` values
+The runtime is used to study Linux scheduling behavior:
+
+* CPU-bound vs I/O-bound workloads
+* Effect of `nice` values on execution
+* Comparison of execution times and responsiveness
 
 ### Observations
 
-* CPU sharing
-* Execution time differences
-* Scheduler fairness and responsiveness
+* Higher priority processes receive more CPU time
+* I/O-bound processes remain responsive
+* Scheduler balances fairness and throughput
+
+---
+
+## Build and Run
+
+### 1. Build the Project
+
+```bash
+make
+```
+
+### 2. Load Kernel Module
+
+```bash
+sudo insmod monitor.ko
+```
+
+### 3. Start Supervisor
+
+```bash
+sudo ./engine supervisor ./rootfs-base
+```
+
+### 4. Create Container Filesystems
+
+```bash
+cp -a ./rootfs-base ./rootfs-alpha
+cp -a ./rootfs-base ./rootfs-beta
+```
+
+### 5. Start Containers
+
+```bash
+sudo ./engine start alpha ./rootfs-alpha /bin/sh
+sudo ./engine start beta ./rootfs-beta /bin/sh
+```
+
+### 6. Check Containers
+
+```bash
+sudo ./engine ps
+```
+
+### 7. View Logs
+
+```bash
+sudo ./engine logs alpha
+```
+
+### 8. Stop Containers
+
+```bash
+sudo ./engine stop alpha
+sudo ./engine stop beta
+```
+
+### 9. Unload Kernel Module
+
+```bash
+sudo rmmod monitor
+```
 
 ---
 
 ## Engineering Analysis
 
-### Isolation Mechanisms
+### 1. Isolation Mechanisms
 
-Containers are isolated using Linux namespaces (PID, UTS, mount) and separate root filesystems. Each container operates independently while sharing the host kernel.
+The system uses Linux namespaces to isolate containers:
 
-### Supervisor and Lifecycle Management
+* PID namespace isolates process trees
+* Mount namespace isolates filesystem view
+* UTS namespace isolates hostname
 
-A persistent supervisor process manages all containers, ensuring proper process tracking, signal handling, and cleanup of child processes.
+However, all containers share the same kernel, making them lightweight compared to virtual machines.
 
-### IPC and Synchronization
+---
+
+### 2. Supervisor and Process Lifecycle
+
+A persistent supervisor:
+
+* Tracks all containers centrally
+* Handles process creation using `clone()`
+* Reaps child processes using `SIGCHLD`
+* Maintains container metadata
+
+This prevents zombie processes and enables controlled lifecycle management.
+
+---
+
+### 3. IPC and Synchronization
 
 Two IPC mechanisms are used:
 
-* Pipes for logging
-* Socket/FIFO/shared memory for control
+* **Control IPC** → CLI ↔ Supervisor
+* **Logging IPC** → Containers → Supervisor
 
-Synchronization is handled using mutexes and condition variables to avoid race conditions and ensure safe concurrent access.
+Synchronization is handled using:
 
-### Memory Management
+* Mutexes for shared data
+* Condition variables for buffer coordination
 
-RSS is monitored to track actual memory usage. Soft and hard limits allow flexible control, with enforcement implemented in kernel space for accuracy and reliability.
+This prevents:
 
-### Scheduling Behavior
+* Race conditions
+* Data corruption
+* Deadlocks
 
-Experiments demonstrate how Linux scheduling policies affect process execution, highlighting trade-offs between fairness and performance.
+---
+
+### 4. Memory Management
+
+* RSS (Resident Set Size) measures physical memory usage
+* Soft limit provides early warning
+* Hard limit enforces strict control
+
+Kernel-level enforcement ensures:
+
+* Accurate tracking
+* Immediate action
+* Protection against user-space bypass
+
+---
+
+### 5. Scheduling Behavior
+
+Experiments demonstrate:
+
+* Priority-based CPU allocation using `nice`
+* Fair scheduling across processes
+* Tradeoff between responsiveness and throughput
 
 ---
 
 ## Design Decisions and Tradeoffs
 
-| Component      | Decision            | Tradeoff                                |
-| -------------- | ------------------- | --------------------------------------- |
-| Isolation      | chroot + namespaces | Simpler but less secure than pivot_root |
-| Supervisor     | Centralized daemon  | Single point of control                 |
-| Logging        | Bounded buffer      | Added synchronization complexity        |
-| IPC            | Separate channels   | Increased design complexity             |
-| Kernel Monitor | Kernel enforcement  | Requires module handling                |
-
----
-
-## Scheduler Experiment Results
-
-* CPU-bound processes with higher priority complete faster
-* I/O-bound processes remain responsive under load
-* Linux scheduler balances fairness and throughput effectively
+| Component      | Decision                            | Tradeoff                                 |
+| -------------- | ----------------------------------- | ---------------------------------------- |
+| Isolation      | Used `chroot`                       | Easier but less secure than `pivot_root` |
+| Supervisor     | Single central process              | Simpler but potential bottleneck         |
+| Logging        | Bounded buffer                      | Requires careful synchronization         |
+| IPC            | Separate control & logging channels | More complexity but cleaner design       |
+| Memory Control | Kernel module                       | Higher complexity but better enforcement |
 
 ---
 
 ## Conclusion
 
-This project demonstrates practical implementation of containerization concepts, kernel interaction, and operating system fundamentals including process management, memory control, synchronization, and scheduling.
-
-```
+This project provides a practical implementation of core OS concepts including containerization, memory management, scheduling, and IPC. It demonstrates how user-space and kernel-space components can work together to build a controlled and observable execution environment
